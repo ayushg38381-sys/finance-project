@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 from scipy.stats import norm
+from scipy.optimize import minimize
 
 tickers = ["AAPL","MSFT","NVDA"]
 
@@ -197,3 +198,97 @@ crisis_shock = -0.30
 stressed_portfolio = 100 * (1 + crisis_shock)
 print("\n2008 style stress Test")
 print(stressed_portfolio)
+stress_scenarios = {
+    "2008 Financial Crisis": -0.30,
+    "COVID Crash": -0.35,
+    "Interest Rate Shock": -0.15,
+    "Mild Recession": -0.10
+}
+print("\nStress Testing Results")
+for scenario, shock in stress_scenarios.items():
+    stressed_value = 100 * (1+shock)
+    print(
+        scenario,
+        "->",
+        stressed_value
+    )
+    mean_returns = returns.mean()
+    def portfolio_performance(weights):
+        portfolio_return = np.sum(
+            mean_returns * weights
+        ) * 252
+        portfolio_vol = np.sqrt(
+            np.dot(
+                weights.T,
+                np.dot(
+                    cov_matrix * 252,
+                    weights
+                )
+            )
+        )
+        sharpe = portfolio_return / portfolio_vol
+
+        return portfolio_return, portfolio_vol, sharpe
+test_weights = np.array([
+            0.33,
+            0.33,
+            0.34
+        ])
+print("\nPortfolio Performance")
+
+print(
+    portfolio_performance(
+        test_weights
+    )
+)
+def negative_sharpe(weights):
+    return -portfolio_performance(weights)[2]
+num_assets = len(mean_returns)
+constraints = (
+    {
+        'type':'eq',
+        'fun':lambda x: np.sum(x) -1
+    }
+)
+bounds = tuple(
+    (0,1)
+    for asset in range(num_assets)
+)
+initial_weights = np.array(
+    [1/num_assets] * num_assets
+)
+optimal = minimize(
+    negative_sharpe,
+    initial_weights,
+    method='SLSQP',
+    bounds=bounds,
+    constraints=constraints
+)
+print("\nOptimal Weights")
+print(optimal.x)
+
+print("\nOptimal Portfolio")
+print(
+    portfolio_performance(
+        optimal.x
+    )
+)
+def portfolio_variance(weights):
+
+    return portfolio_performance(weights)[1]
+min_var = minimize(
+    portfolio_variance,
+    initial_weights,
+    method="SLSQP",
+    bounds=bounds,
+    constraints=constraints
+)
+print("\nMinimum Variance Weights")
+print(min_var.x)
+
+print("\nMinimum Variance Portfolio")
+print(
+    portfolio_performance(
+        min_var.x
+    )
+)
