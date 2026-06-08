@@ -4,6 +4,11 @@ import pandas as pd
 import plotly.express as px
 import numpy as np
 
+st.set_page_config(
+    page_title="Portfolio Risk Dashboard",
+    layout="wide"
+)
+
 st.title("📊 Portfolio Risk Dashboard")
 
 stock1 = st.text_input(
@@ -36,10 +41,7 @@ if analyze:
         f"Selected Stocks: {selected_stocks['stocks']}"
     )
 
-st.set_page_config(
-    page_title="Portfolio Risk Dashboard",
-    layout="wide"
-)
+
 
 st.title("📊 Portfolio Risk Dashboard")
 
@@ -101,6 +103,23 @@ opt = requests.get(
     f"stock2={stock2}&"
     f"stock3={stock3}"
 ).json()
+
+if analyze:
+
+    url = (
+        f"http://127.0.0.1:8000/correlation?"
+        f"stock1={stock1}&"
+        f"stock2={stock2}&"
+        f"stock3={stock3}"
+    )
+
+    corr = requests.get(url).json()
+
+    
+
+else:
+    st.info("Enter stocks and click Analyze Portfolio")
+    st.stop()
 
 col1, col2, col3 = st.columns(3)
 
@@ -252,16 +271,20 @@ allocation_df = pd.DataFrame({
 fig = px.pie(
     allocation_df,
     names="Stock",
-    values="Weight",
-    title="Optimal Portfolio Allocation"
+    values="Weight"
 )
+
+fig.update_traces(
+    textposition="inside",
+    textinfo="percent+label"
+)
+
 fig.update_layout(
-    height=800
+    title="Portfolio Allocation",
+     height=600
 )
-st.plotly_chart(
-    fig,
-    use_container_width=True
-)
+
+st.plotly_chart(fig)
 
 st.divider()
 
@@ -281,10 +304,31 @@ hist_fig = px.histogram(
 hist_fig.update_layout(
     height=500
 )
-st.plotly_chart(
-    hist_fig,
-    use_container_width=True
+
+st.plotly_chart(hist_fig)
+
+
+st.divider()
+
+st.subheader("Correlation Heatmap")
+
+corr_df = pd.DataFrame(
+    corr["correlation_matrix"]
 )
+
+heatmap = px.imshow(
+    corr_df,
+    text_auto=".2f",
+    title="Stock Correlation Matrix",
+    aspect="auto"
+)
+
+heatmap.update_layout(
+    width=800,
+    height=600
+)
+
+st.plotly_chart(heatmap)
 
 st.divider()
 

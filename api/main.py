@@ -4,6 +4,7 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from scipy.optimize import minimize 
+from risk.correlation import calculate_correlation
 
 
 app = FastAPI()
@@ -384,4 +385,22 @@ def dynamic_optimization(
         "expected_return": float(portfolio_return),
         "volatility": float(portfolio_vol),
         "sharpe_ratio": float(sharpe)
+    }
+@app.get("/correlation")
+def correlation(
+    stock1: str,
+    stock2: str,
+    stock3: str
+):
+    tickers = [
+        stock1,
+        stock2,
+        stock3
+    ]
+    corr_matrix = calculate_correlation(
+        tickers
+    )
+    return{
+        "correlation_matrix":
+        corr_matrix.to_dict()
     }
