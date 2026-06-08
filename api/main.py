@@ -182,6 +182,40 @@ def dynamic_risk(
 
     sharpe_ratio = annual_return / annual_volatility
 
+    market_data = yf.download(
+    "SPY",
+    start="2020-01-01",
+    end="2025-01-01"
+    )
+
+    market = market_data["Close"].squeeze()
+
+    market_returns = market.pct_change().dropna()
+
+    common_dates = portfolio_returns.index.intersection(
+    market_returns.index
+)
+
+    portfolio_aligned = portfolio_returns.loc[common_dates]
+    market_aligned = market_returns.loc[common_dates]
+
+    beta = (
+        portfolio_aligned.cov(market_aligned)
+        / market_aligned.var()
+    )
+
+    risk_free_rate = 0.04
+
+    market_return = market_aligned.mean() * 252
+
+    alpha = (
+        annual_return
+        - (
+            risk_free_rate
+            + beta * (market_return - risk_free_rate)
+        )
+    )
+
     cumulative_returns = (1 + portfolio_returns).cumprod()
 
     running_max = cumulative_returns.cummax()
@@ -197,8 +231,8 @@ def dynamic_risk(
         "annual_volatility": float(annual_volatility),
         "sharpe_ratio": float(sharpe_ratio),
         "max_drawdown": float(max_drawdown),
-        "beta": 1.0,
-        "alpha": 0.0
+        "beta": float(beta),
+        "alpha": float(alpha)
     }
 @app.get("/dynamic-var")
 def dynamic_var(
