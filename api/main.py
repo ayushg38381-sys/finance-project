@@ -192,6 +192,10 @@ def dynamic_risk(
 
     market_returns = market.pct_change().dropna()
 
+    print("Portfolio shape:", portfolio_returns.shape)
+    print("Market shape:", market_returns.shape)
+    print("Market type:", type(market_returns))
+
     common_dates = portfolio_returns.index.intersection(
     market_returns.index
 )
