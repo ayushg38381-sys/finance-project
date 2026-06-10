@@ -442,3 +442,53 @@ def correlation(
         "correlation_matrix":
         corr_matrix.to_dict()
     }
+@app.get("/benchmark")
+def benchmark(
+    stock1: str,
+    stock2: str,
+    stock3: str
+):
+
+    tickers = [stock1, stock2, stock3]
+
+    data = yf.download(
+        tickers,
+        start="2020-01-01",
+        end="2025-01-01"
+    )
+
+    close_prices = data["Close"]
+
+    returns = close_prices.pct_change().dropna()
+
+    portfolio_returns = returns.mean(axis=1)
+
+    market = yf.download(
+        "SPY",
+        start="2020-01-01",
+        end="2025-01-01"
+    )["Close"]
+
+    market_returns = market.pct_change().dropna()
+
+    common_dates = portfolio_returns.index.intersection(
+        market_returns.index
+    )
+
+    portfolio_returns = portfolio_returns.loc[common_dates]
+
+    market_returns = market_returns.loc[common_dates]
+
+    portfolio_cumulative = (
+        1 + portfolio_returns
+    ).cumprod()
+
+    market_cumulative = (
+        1 + market_returns
+    ).cumprod()
+
+    return {
+        "dates": portfolio_cumulative.index.astype(str).tolist(),
+        "portfolio": portfolio_cumulative.tolist(),
+        "market": market_cumulative.squeeze().tolist()
+    }

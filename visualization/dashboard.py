@@ -104,6 +104,13 @@ opt = requests.get(
     f"stock3={stock3}"
 ).json()
 
+benchmark = requests.get(
+    f"http://127.0.0.1:8000/benchmark?"
+    f"stock1={stock1}&"
+    f"stock2={stock2}&"
+    f"stock3={stock3}"
+).json()
+
 if analyze:
 
     url = (
@@ -256,6 +263,25 @@ with p3:
         "Sharpe Ratio",
         round(opt["sharpe_ratio"], 4)
     )
+
+st.divider()
+
+st.subheader("Portfolio vs S&P 500")
+
+benchmark_df = pd.DataFrame({
+    "Date": benchmark["dates"],
+    "Portfolio": benchmark["portfolio"],
+    "S&P500": benchmark["market"]
+})
+
+fig = px.line(
+    benchmark_df,
+    x="Date",
+    y=["Portfolio", "S&P500"],
+    title="Portfolio Performance vs S&P500"
+)
+
+st.plotly_chart(fig)
 
 st.divider()
 
