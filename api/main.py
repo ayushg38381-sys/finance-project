@@ -424,6 +424,67 @@ def dynamic_optimization(
         "volatility": float(portfolio_vol),
         "sharpe_ratio": float(sharpe)
     }
+
+@app.get("/efficient-frontier")
+def efficient_frontier(
+    stock1: str,
+    stock2: str,
+    stock3: str,
+):
+    
+    tickers = [stock1, stock2, stock3]
+
+    data = yf.download(
+        tickers,
+        start="2020-01-01",
+        end="2025-01-01"
+    )
+
+    close_prices = data["Close"]
+
+    returns = close_prices.pct_change().dropna()
+
+    mean_returns = returns.mean()
+
+    cov_matrix = returns.cov()
+    portfolio_returns = []
+    portfolio_volatilities = []
+    portfolio_sharpes = []
+
+    for i in range(5000):
+        weights = np.random.random(3)
+        weights = weights / np.sum(weights)
+        portfolio_return = np.sum(
+            mean_returns * weights
+        ) * 252
+        portfolio_volatility = np.sqrt(
+            np.dot(
+                weights.T,
+                np.dot(
+                    cov_matrix * 252,
+                    weights
+                )
+            )
+        )
+        sharpe = portfolio_return / portfolio_volatility  
+        portfolio_returns.append(
+            float(portfolio_return)
+        )
+
+        portfolio_volatilities.append(
+            float(portfolio_volatility)
+        )
+
+        portfolio_sharpes.append(
+            float(sharpe)
+        ) 
+
+    return {
+    "returns": portfolio_returns,
+    "volatilities": portfolio_volatilities,
+    "sharpes": portfolio_sharpes
+    }   
+
 @app.get("/correlation")
 def correlation(
     stock1: str,
@@ -491,4 +552,39 @@ def benchmark(
         "dates": portfolio_cumulative.index.astype(str).tolist(),
         "portfolio": portfolio_cumulative.tolist(),
         "market": market_cumulative.squeeze().tolist()
+    }
+
+@app.get("/dynamic-stress-test")
+def dynamic_stress_test(
+    stock1: str,
+    stock2: str,
+    stock3: str,
+    shock1: float,
+    shock2: float,
+    shock3: float
+):
+    shock_vector = np.array([
+        shock1 / 100,
+        shock2 / 100,
+        shock3 / 100
+    ])
+
+    opt = dynamic_optimization(
+    stock1,
+    stock2,
+    stock3
+    ) 
+    
+    weights = np.array(
+    opt["optimal_weights"]
+    )
+    portfolio_loss = np.sum(
+        weights * shock_vector
+    )
+
+    return {
+        "portfolio_loss": float(portfolio_loss),
+        "remaining_value": float(
+            1 + portfolio_loss
+        )
     }

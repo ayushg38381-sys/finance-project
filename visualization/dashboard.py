@@ -111,6 +111,19 @@ benchmark = requests.get(
     f"stock3={stock3}"
 ).json()
 
+frontier = requests.get(
+    f"http://127.0.0.1:8000/efficient-frontier?"
+    f"stock1={stock1}&"
+    f"stock2={stock2}&"
+    f"stock3={stock3}"
+).json()
+
+frontier_df = pd.DataFrame({
+    "Return": frontier["returns"],
+    "Volatility": frontier["volatilities"],
+    "Sharpe": frontier["sharpes"]
+})
+
 if analyze:
 
     url = (
@@ -285,6 +298,23 @@ st.plotly_chart(fig)
 
 st.divider()
 
+st.subheader("Efficient Frontier")
+
+fig = px.scatter(
+    frontier_df,
+    x="Volatility",
+    y="Return",
+    color="Sharpe",
+    title="Efficient Frontier"
+)
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
+
+st.divider()
+
 st.subheader("Portfolio Allocation")
 
 weights = opt["optimal_weights"]
@@ -418,3 +448,97 @@ st.markdown(f"""
 
 • Optimized Expected Return: {opt['expected_return']:.2%}
 """)
+
+st.divider()
+st.subheader("Scenario Analysis")
+
+if "scenario" not in st.session_state:
+    st.session_state.scenario = "Custom"
+
+scenario = st.selectbox(
+    "Select Scenario",
+    [
+        "Custom",
+        "COVID Crash",
+        "Financial Crisis 2008",
+        "AI Boom",
+        "Interest Rate Hike"
+    ],
+    key="scenario_select"
+)
+
+st.write("Selected scenario:", scenario)
+
+st.divider()
+st.subheader("stress Testing")
+
+if scenario == "COVID Crash":
+    default1, default2, default3 = -25, -20, -35
+
+elif scenario == "Financial Crisis 2008":
+    default1, default2, default3 = -30, -25, -45
+
+elif scenario == "AI Boom":
+    default1, default2, default3 = 20, 15, 40
+
+elif scenario == "Interest Rate Hike":
+    default1, default2, default3 = -10, -15, -20
+
+else:
+    default1, default2, default3 = 0, 0, 0
+
+shock1 = st.number_input(
+    f"{stock1} shock (%)",
+    value=default1,
+    key="shock1"
+)
+
+shock2 = st.number_input(
+    f"{stock2} shock (%)",
+    value=default2,
+    key="shock2"
+)
+
+shock3 = st.number_input(
+    f"{stock3} shock (%)",
+    value=default3,
+    key="shock3"
+)
+
+stress = requests.get(
+    f"http://127.0.0.1:8000/dynamic-stress-test?"
+    f"stock1={stock1}&"
+    f"stock2={stock2}&"
+    f"stock3={stock3}&"
+    f"shock1={shock1}&"
+    f"shock2={shock2}&"
+    f"shock3={shock3}"
+).json()
+
+st.markdown("### Portfolio Weights Used in Stress Test")
+
+weights = opt["optimal_weights"]
+
+st.write(
+    f"""
+    • {stock1}: {weights[0]*100:.2f}%
+
+    • {stock2}: {weights[1]*100:.2f}%
+
+    • {stock3}: {weights[2]*100:.2f}%
+    """
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric(
+        "Portfolio Loss",
+        f"{stress['portfolio_loss']*100:.2f}%"
+    )
+
+with col2:
+    st.metric(
+        "Remaining Value",
+        f"{stress['remaining_value']*100:.2f}%"
+    )
