@@ -8,7 +8,7 @@ constraints = (
     }
 )
 bounds = tuple(
-    (0,1)
+    (0.10, 0.70)
     for asset in range(num_assets)
 )
 initial_weights = np.array(

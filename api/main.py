@@ -5,9 +5,27 @@ import pandas as pd
 import numpy as np
 from scipy.optimize import minimize 
 from risk.correlation import calculate_correlation
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 
 app = FastAPI()
+
+def get_returns(stock1, stock2, stock3):
+
+    tickers = [stock1, stock2, stock3]
+
+    data = yf.download(
+        tickers,
+        start="2020-01-01",
+        end="2025-01-01"
+    )
+
+    close_prices = data["Close"]
+
+    returns = close_prices.pct_change().dropna()
+
+    return returns
 
 @app.get("/stocks")
 def get_stocks(
@@ -386,7 +404,15 @@ def dynamic_optimization(
 
     def negative_sharpe(weights):
 
-        return -portfolio_performance(weights)[2]
+        portfolio_return, portfolio_vol, sharpe = (
+            portfolio_performance(weights)
+        )
+
+        concentration_penalty = np.sum(
+            weights ** 2
+        )
+
+        return -sharpe + concentration_penalty
 
     num_assets = len(mean_returns)
 
@@ -398,7 +424,7 @@ def dynamic_optimization(
     )
 
     bounds = tuple(
-        (0, 1)
+        (0.1, 0.6)
         for asset in range(num_assets)
     )
 
@@ -578,6 +604,11 @@ def dynamic_stress_test(
     weights = np.array(
     opt["optimal_weights"]
     )
+
+    print("Stocks:", stock1, stock2, stock3)
+    print("Weights:", weights)
+    print("Shock Vector:", shock_vector)
+
     portfolio_loss = np.sum(
         weights * shock_vector
     )
@@ -587,4 +618,88 @@ def dynamic_stress_test(
         "remaining_value": float(
             1 + portfolio_loss
         )
+    }
+
+@app.get("/market-regime")
+def market_regime(
+    stock1: str,
+    stock2: str,
+    stock3: str
+):
+
+    returns = get_returns(
+        stock1,
+        stock2,
+        stock3
+    )
+
+    portfolio_returns = returns.mean(axis=1)
+
+    volatility = (
+        portfolio_returns
+        .rolling(20)
+        .std()
+    )
+
+    momentum = (
+        portfolio_returns
+        .rolling(20)
+        .mean()
+    )
+
+    features = pd.DataFrame({
+        "return": portfolio_returns,
+        "volatility": volatility,
+        "momentum": momentum
+    }).dropna()
+
+    scaler = StandardScaler()
+
+    scaled_features = scaler.fit_transform(
+        features
+    )
+
+    kmeans = KMeans(
+        n_clusters=4,
+        random_state=42,
+        n_init=10
+    )
+
+    clusters = kmeans.fit_predict(
+        scaled_features
+    )
+
+    current_cluster = int(
+        clusters[-1]
+    )
+
+    regime_names = {
+        0: "Bull Market",
+        1: "Bear Market",
+        2: "High Volatility",
+        3: "Recovery Phase"
+    }
+
+    distances = kmeans.transform(
+        scaled_features
+    )
+
+    latest_distance = distances[-1]
+
+    confidence = (
+        1
+        - latest_distance.min()
+        /
+        latest_distance.sum()
+    ) * 100
+
+    return {
+        "regime":
+            regime_names[current_cluster],
+
+        "cluster":
+            current_cluster,
+
+        "confidence":
+            float(confidence)
     }

@@ -450,10 +450,8 @@ st.markdown(f"""
 """)
 
 st.divider()
-st.subheader("Scenario Analysis")
 
-if "scenario" not in st.session_state:
-    st.session_state.scenario = "Custom"
+st.subheader("Scenario Analysis")
 
 scenario = st.selectbox(
     "Select Scenario",
@@ -463,47 +461,33 @@ scenario = st.selectbox(
         "Financial Crisis 2008",
         "AI Boom",
         "Interest Rate Hike"
-    ],
-    key="scenario_select"
+    ]
 )
 
-st.write("Selected scenario:", scenario)
-
-st.divider()
-st.subheader("stress Testing")
+st.write("Current Scenario =", scenario)
 
 if scenario == "COVID Crash":
-    default1, default2, default3 = -25, -20, -35
+    shock1, shock2, shock3 = -25, -20, -35
 
 elif scenario == "Financial Crisis 2008":
-    default1, default2, default3 = -30, -25, -45
+    shock1, shock2, shock3 = -30, -25, -45
 
 elif scenario == "AI Boom":
-    default1, default2, default3 = 20, 15, 40
+    shock1, shock2, shock3 = 20, 15, 40
 
 elif scenario == "Interest Rate Hike":
-    default1, default2, default3 = -10, -15, -20
+    shock1, shock2, shock3 = -10, -15, -20
 
 else:
-    default1, default2, default3 = 0, 0, 0
+    shock1 = st.number_input(f"{stock1} shock (%)", value=0.0)
+    shock2 = st.number_input(f"{stock2} shock (%)", value=0.0)
+    shock3 = st.number_input(f"{stock3} shock (%)", value=0.0)
 
-shock1 = st.number_input(
-    f"{stock1} shock (%)",
-    value=default1,
-    key="shock1"
-)
+if scenario != "Custom":
 
-shock2 = st.number_input(
-    f"{stock2} shock (%)",
-    value=default2,
-    key="shock2"
-)
-
-shock3 = st.number_input(
-    f"{stock3} shock (%)",
-    value=default3,
-    key="shock3"
-)
+    st.write(f"{stock1} shock: {shock1}%")
+    st.write(f"{stock2} shock: {shock2}%")
+    st.write(f"{stock3} shock: {shock3}%")
 
 stress = requests.get(
     f"http://127.0.0.1:8000/dynamic-stress-test?"
@@ -515,30 +499,49 @@ stress = requests.get(
     f"shock3={shock3}"
 ).json()
 
-st.markdown("### Portfolio Weights Used in Stress Test")
+st.divider()
 
-weights = opt["optimal_weights"]
-
-st.write(
-    f"""
-    • {stock1}: {weights[0]*100:.2f}%
-
-    • {stock2}: {weights[1]*100:.2f}%
-
-    • {stock3}: {weights[2]*100:.2f}%
-    """
-)
+st.subheader("Stress Test Results")
 
 col1, col2 = st.columns(2)
 
 with col1:
     st.metric(
-        "Portfolio Loss",
-        f"{stress['portfolio_loss']*100:.2f}%"
+        "Portfolio Impact",
+        f"{stress['portfolio_loss']:.2%}"
     )
 
 with col2:
     st.metric(
-        "Remaining Value",
-        f"{stress['remaining_value']*100:.2f}%"
+        "Portfolio Value After Shock",
+        f"{stress['remaining_value']:.2%}"
     )
+
+st.divider()
+
+st.subheader("Machine Learning Insights")
+
+regime = requests.get(
+    f"http://127.0.0.1:8000/market-regime?"
+    f"stock1={stock1}&"
+    f"stock2={stock2}&"
+    f"stock3={stock3}"
+).json()
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.metric(
+        "Current Market Regime",
+        regime["regime"]
+    )
+
+with col2:
+    st.metric(
+        "Confidence",
+        f"{regime['confidence']:.1f}%"
+    )
+
+st.write(
+    f"Cluster ID: {regime['cluster']}"
+)
