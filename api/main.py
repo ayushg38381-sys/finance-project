@@ -7,9 +7,32 @@ from scipy.optimize import minimize
 from risk.correlation import calculate_correlation
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score
+import os
+import google.generativeai as genai
+
+from dotenv import load_dotenv
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer
+)
+
+from reportlab.lib.styles import getSampleStyleSheet
+
+from fastapi.responses import FileResponse
+
 
 
 app = FastAPI()
+
+load_dotenv()
+
+genai.configure(
+    api_key=os.getenv("GEMINI_API_KEY")
+)
+
 
 def get_returns(stock1, stock2, stock3):
 
@@ -669,16 +692,65 @@ def market_regime(
         scaled_features
     )
 
+    features["cluster"] = clusters
+    
+    cluster_stats = (
+        features
+        .groupby("cluster")
+        [["return", "volatility"]]
+        .mean()
+    )
+
     current_cluster = int(
         clusters[-1]
     )
 
-    regime_names = {
-        0: "Bull Market",
-        1: "Bear Market",
-        2: "High Volatility",
-        3: "Recovery Phase"
-    }
+    regime_names = {}
+
+    median_vol = (
+        cluster_stats["volatility"]
+        .median()
+    )
+
+    for cluster_id in cluster_stats.index:
+
+        avg_return = (
+            cluster_stats.loc[
+                cluster_id,
+                "return"
+            ]
+        )
+
+        avg_vol = (
+            cluster_stats.loc[
+                cluster_id,
+                "volatility"
+            ]
+        )
+
+        if avg_return > 0 and avg_vol < median_vol:
+
+            regime_names[cluster_id] = (
+                "Bull Market"
+            )
+
+        elif avg_return < 0:
+
+            regime_names[cluster_id] = (
+                "Bear Market"
+            )
+
+        elif avg_vol > median_vol:
+
+            regime_names[cluster_id] = (
+                "High Volatility"
+            )
+
+        else:
+
+            regime_names[cluster_id] = (
+                "Recovery Phase"
+            )
 
     distances = kmeans.transform(
         scaled_features
@@ -703,3 +775,123 @@ def market_regime(
         "confidence":
             float(confidence)
     }
+
+@app.get("/return-forecast")
+def return_forecast(
+    stock1: str,
+    stock2: str,
+    stock3: str
+):
+
+    returns = get_returns(
+        stock1,
+        stock2,
+        stock3
+    )
+
+    portfolio_returns = returns.mean(axis=1)
+
+    data = pd.DataFrame()
+
+    data["return"] = portfolio_returns
+
+    data["volatility"] = (
+        portfolio_returns
+        .rolling(20)
+        .std()
+    )
+
+    data["momentum"] = (
+        portfolio_returns
+        .rolling(20)
+        .mean()
+     )
+
+    data["short_term_momentum"] = (
+        portfolio_returns
+        .rolling(5)
+        .mean()
+    )
+
+    data["ma20"] = (
+        portfolio_returns
+        .rolling(20)
+        .mean()
+    )
+
+    data["ma50"] = (
+        portfolio_returns
+        .rolling(50)
+        .mean()
+    )
+    data["future_return"] = (
+        portfolio_returns
+        .shift(-30)
+    )
+
+    data = data.dropna()
+
+    X = data[
+        [
+            "return",
+            "volatility",
+            "momentum",
+            "short_term_momentum",
+            "ma20",
+            "ma50"
+        ]
+    ]
+
+    y = data["future_return"]
+
+    split_index = int(
+        len(data) * 0.8
+    )
+
+    X_train = X.iloc[:split_index]
+    X_test = X.iloc[split_index:]
+
+    y_train = y.iloc[:split_index]
+    y_test = y.iloc[split_index:]
+
+    model = RandomForestRegressor(
+        n_estimators=100,
+        random_state=42
+    )
+
+    model.fit(
+        X_train,
+        y_train
+    )
+
+    prediction = model.predict(
+        X.tail(1)
+    )[0]
+
+    test_predictions = model.predict(
+        X_test
+    )
+
+    score = r2_score(
+        y_test,
+        test_predictions
+    )
+
+    direction = (
+        "Bullish"
+        if prediction > 0
+        else "Bearish"
+    )
+
+    return {
+        "predicted_return":
+            float(prediction * 100),
+
+        "direction":
+            direction,
+
+        "model_score":
+            float(score * 100)
+    }
+
+

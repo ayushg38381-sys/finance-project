@@ -9,7 +9,13 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 Portfolio Risk Dashboard")
+st.title(
+    "📊 Quantitative Portfolio Risk Analytics Dashboard"
+    )
+         
+st.caption(
+    "Developed by Ayush Anand | BITS Pilani Hyderabad"
+)
 
 stock1 = st.text_input(
     "Stock 1",
@@ -388,7 +394,7 @@ st.plotly_chart(heatmap)
 
 st.divider()
 
-st.subheader("🤖 AI Risk Assessment")
+st.subheader("Portfolio Analysis")
 
 risk_level = "High" if risk["beta"] > 1 else "Moderate"
 
@@ -423,7 +429,7 @@ st.markdown(risk_text)
 
 st.divider()
 
-st.subheader("🤖 AI Portfolio Insights")
+st.subheader("Portfolio Insights")
 
 weights = opt["optimal_weights"]
 
@@ -545,3 +551,36 @@ with col2:
 st.write(
     f"Cluster ID: {regime['cluster']}"
 )
+
+st.divider()
+
+st.subheader("Machine Learning Forecast")
+
+forecast = requests.get(
+    f"http://127.0.0.1:8000/return-forecast?"
+    f"stock1={stock1}&"
+    f"stock2={stock2}&"
+    f"stock3={stock3}"
+).json()
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.metric(
+        "Predicted Return",
+        f"{forecast['predicted_return']:.2f}%"
+    )
+
+with col2:
+    st.metric(
+        "Direction",
+        forecast["direction"]
+    )
+
+with col3:
+    st.metric(
+        "Model Score",
+        f"{forecast['model_score']:.2f}"
+    )
+
+
