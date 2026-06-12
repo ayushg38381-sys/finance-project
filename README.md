@@ -1,36 +1,36 @@
-# Portfolio Risk Dashboard
+# Quantitative Portfolio Risk Analytics Dashboard
 
-A financial analytics dashboard built using FastAPI and Streamlit.
+## Overview
+
+A quantitative finance dashboard developed using Python, Streamlit and Machine Learning for portfolio analytics, optimization and risk assessment.
 
 ## Features
 
-- Dynamic stock selection
-- Portfolio return analysis
-- Portfolio volatility analysis
-- Sharpe Ratio
-- Beta and Alpha calculation
-- Value at Risk (VaR)
-- Conditional VaR (CVaR)
-- Monte Carlo Simulation
+- Portfolio Performance Analytics
+- Modern Portfolio Theory
+- Efficient Frontier Visualization
 - Portfolio Optimization
-- Correlation Heatmap
-- AI Risk Assessment
+- Monte Carlo Simulation
+- Value at Risk (VaR)
+- Conditional Value at Risk (CVaR)
+- Correlation Analysis
+- Stress Testing
+- Market Regime Detection
+- Machine Learning Forecasting
+- PDF Report Generation
 
-## Tech Stack
+## Technologies
 
 - Python
-- FastAPI
 - Streamlit
-- Plotly
-- Pandas
 - NumPy
-- SciPy
-- yFinance
+- Pandas
+- Plotly
+- Scikit-Learn
+- YFinance
+- FastAPI
 
-## Run Backend
+## Author
 
-uvicorn api.main:app --reload
-
-## Run Dashboard
-
-streamlit run visualization/dashboard.py
+Ayush Anand
+BITS Pilani Hyderabad
