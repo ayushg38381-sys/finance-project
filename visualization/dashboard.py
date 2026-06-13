@@ -37,7 +37,7 @@ analyze = st.button("Analyze Portfolio")
 if analyze:
 
     selected_stocks = requests.get(
-        f"http://127.0.0.1:8000/stocks?"
+        f"https://finance-project-qrlp.onrender.com/stocks?"
         f"stock1={stock1}&"
         f"stock2={stock2}&"
         f"stock3={stock3}"
@@ -54,7 +54,7 @@ st.title("📊 Portfolio Risk Dashboard")
 if analyze:
 
     portfolio = requests.get(
-        f"http://127.0.0.1:8000/portfolio-data?"
+        f"https://finance-project-qrlp.onrender.com/portfolio-data?"
         f"stock1={stock1}&"
         f"stock2={stock2}&"
         f"stock3={stock3}"
@@ -63,13 +63,13 @@ if analyze:
 else:
 
     portfolio = requests.get(
-        "http://127.0.0.1:8000/portfolio"
+        "https://finance-project-qrlp.onrender.com/portfolio"
     ).json()
 
 if analyze:
 
     risk = requests.get(
-        f"http://127.0.0.1:8000/dynamic-risk?"
+        f"https://finance-project-qrlp.onrender.com/dynamic-risk?"
         f"stock1={stock1}&"
         f"stock2={stock2}&"
         f"stock3={stock3}"
@@ -78,13 +78,13 @@ if analyze:
 else:
 
     risk = requests.get(
-        "http://127.0.0.1:8000/risk"
+        "https://finance-project-qrlp.onrender.com/risk"
     ).json()
 
 if analyze:
 
     var = requests.get(
-        f"http://127.0.0.1:8000/dynamic-var?"
+        f"https://finance-project-qrlp.onrender.com/dynamic-var?"
         f"stock1={stock1}&"
         f"stock2={stock2}&"
         f"stock3={stock3}"
@@ -93,32 +93,32 @@ if analyze:
 else:
 
     var = requests.get(
-        "http://127.0.0.1:8000/var"
+        "https://finance-project-qrlp.onrender.com/var"
     ).json()
 
 monte = requests.get(
-    f"http://127.0.0.1:8000/dynamic-monte-carlo?"
+    f"https://finance-project-qrlp.onrender.com/dynamic-monte-carlo?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}"
 ).json()
 
 opt = requests.get(
-    f"http://127.0.0.1:8000/dynamic-optimization?"
+    f"https://finance-project-qrlp.onrender.com/dynamic-optimization?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}"
 ).json()
 
 benchmark = requests.get(
-    f"http://127.0.0.1:8000/benchmark?"
+    f"https://finance-project-qrlp.onrender.com/benchmark?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}"
 ).json()
 
 frontier = requests.get(
-    f"http://127.0.0.1:8000/efficient-frontier?"
+    f"https://finance-project-qrlp.onrender.com/efficient-frontier?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}"
@@ -133,7 +133,7 @@ frontier_df = pd.DataFrame({
 if analyze:
 
     url = (
-        f"http://127.0.0.1:8000/correlation?"
+        f"https://finance-project-qrlp.onrender.com/correlation?"
         f"stock1={stock1}&"
         f"stock2={stock2}&"
         f"stock3={stock3}"
@@ -496,7 +496,7 @@ if scenario != "Custom":
     st.write(f"{stock3} shock: {shock3}%")
 
 stress = requests.get(
-    f"http://127.0.0.1:8000/dynamic-stress-test?"
+    f"https://finance-project-qrlp.onrender.com/dynamic-stress-test?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}&"
@@ -528,7 +528,7 @@ st.divider()
 st.subheader("Machine Learning Insights")
 
 regime = requests.get(
-    f"http://127.0.0.1:8000/market-regime?"
+    f"https://finance-project-qrlp.onrender.com/market-regime?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}"
@@ -557,7 +557,7 @@ st.divider()
 st.subheader("Machine Learning Forecast")
 
 forecast = requests.get(
-    f"http://127.0.0.1:8000/return-forecast?"
+    f"https://finance-project-qrlp.onrender.com/return-forecast?"
     f"stock1={stock1}&"
     f"stock2={stock2}&"
     f"stock3={stock3}"
